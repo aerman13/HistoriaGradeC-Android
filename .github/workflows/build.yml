@@ -6,22 +6,47 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Build with Dockerized Buildozer
+    - name: Install system dependencies
       run: |
-        docker run --rm \
-        -v $PWD:/home/user/hostcwd \
-        -v buildozer_deps:/home/user/.buildozer \
-        -v buildozer_ccache:/home/user/.buildozer/.ccache \
-        -e P4A_RELEASE_KEYALIAS=historiagrade3 \
-        -e P4A_RELEASE_KEYSTORE_PASSWD=android \
-        -e P4A_RELEASE_KEYALIAS_PASSWD=android \
-        beeware/buildozer android release
+        sudo apt-get update
+        sudo apt-get install -y \
+          python3-pip \
+          python3-setuptools \
+          git \
+          zip \
+          unzip \
+          openjdk-8-jdk \
+          autoconf \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          cmake \
+          libffi-dev \
+          libssl-dev
+
+    - name: Install Buildozer
+      run: |
+        pip3 install --user buildozer
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Setup Android SDK and accept licenses
+      run: |
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        # Force accept all Android licenses
+        yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+    - name: Build APK
+      run: |
+        buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
