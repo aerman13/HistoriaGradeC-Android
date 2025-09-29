@@ -24,15 +24,16 @@ jobs:
         pip3 install --user buildozer cython
         export PATH="$HOME/.local/bin:$PATH"
 
-    - name: Accept Android SDK Licenses
-      run: |
-        mkdir -p ~/.android
-        touch ~/.android/repositories.cfg
-        yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses
-
-    - name: Build APK
+    - name: Build APK with license acceptance
       run: |
         export PATH="$HOME/.local/bin:$PATH"
+        # Πρώτο build για κατέβασμα SDK (θα αποτύχει)
+        buildozer android debug || true
+        # Αποδοχή αδειών
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        # Δεύτερο build (θα λειτουργήσει)
         buildozer android debug
 
     - name: Upload APK
