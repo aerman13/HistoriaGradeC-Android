@@ -14,11 +14,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Build APK
+    - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip git zip unzip openjdk-17-jdk
+
+    - name: Install Buildozer
+      run: |
         pip3 install --user buildozer cython
+        export PATH="$HOME/.local/bin:$PATH"
+
+    - name: Accept Android SDK Licenses
+      run: |
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses
+
+    - name: Build APK
+      run: |
         export PATH="$HOME/.local/bin:$PATH"
         buildozer android debug
 
