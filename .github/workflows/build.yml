@@ -14,26 +14,38 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip git zip unzip openjdk-17-jdk
+        sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 
-    - name: Install Buildozer
+    - name: Install Buildozer and dependencies
       run: |
-        pip3 install --user buildozer cython
+        pip install buildozer cython virtualenv
         export PATH="$HOME/.local/bin:$PATH"
 
-    - name: Build APK with license acceptance
+    - name: Setup Android SDK and accept licenses
       run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        # Πρώτο build για κατέβασμα SDK (θα αποτύχει)
-        buildozer android debug || true
-        # Αποδοχή αδειών
         mkdir -p ~/.android
         touch ~/.android/repositories.cfg
-        yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-        # Δεύτερο build (θα λειτουργήσει)
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+        mkdir -p android-sdk/cmdline-tools
+        unzip commandlinetools-linux-8512546_latest.zip -d android-sdk/cmdline-tools
+        mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
+        export ANDROID_SDK_ROOT=$PWD/android-sdk
+        export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+
+    - name: Build APK with Buildozer
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        export ANDROID_SDK_ROOT=$PWD/android-sdk
         buildozer android debug
 
     - name: Upload APK
